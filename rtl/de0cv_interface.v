@@ -27,10 +27,10 @@ module de0cv_interface (
 
 parameter HADDR_WIDTH = 25;
 
-// @ 1mhz    19bit (512K) is about 1/2 second
+// @ 2mhz    20bit (1M)   is about 1/2 second
 // @ 100mhz  26bit (64M)  is about 1/2 second
-localparam DOUBlE_CLICK_WAIT = 19;
-localparam LED_BLINK = 20;
+localparam DOUBlE_CLICK_WAIT = 20;
+localparam LED_BLINK = 21;
 
 input        button_n;
 input  [3:0] sw;

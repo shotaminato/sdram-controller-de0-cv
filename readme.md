@@ -118,7 +118,7 @@ The test application provides a simple user interface for testing the functional
 of the sdram controller on the DE0-CV.
 
 Basics:
- - The clock input should be 50Mhz (`CLOCK_50`; a pll multiplies it up to 100Mhz)
+ - The clock input should be 50Mhz (`CLOCK_50`; a pll multiplies it to 100Mhz for SDRAM and 2Mhz for the board test interface)
  - `RESET_N` is used for `reset`
  - `KEY0` (`KEY` port) is used for `read` and `write`
    - single click for `write`

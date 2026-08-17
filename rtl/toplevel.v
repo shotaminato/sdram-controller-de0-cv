@@ -51,7 +51,7 @@ module toplevel (
 localparam HADDR_WIDTH = 25;
 
 wire clk100m;
-wire clk1m;
+wire clk2m;
 
 assign DRAM_CLK = clk100m;
 
@@ -60,13 +60,13 @@ pll pll_i (
     .refclk      (CLOCK_50),
     .rst         (~RESET_N),
     .outclk_0    (clk100m),
-    .outclk_1    (clk1m)
+    .outclk_1    (clk2m)
 );
 
 // Cross Clock FIFOs
-/* Address 25-bit and 16-bit Data transfers from in:1m out:100m */
+/* Address 25-bit and 16-bit Data transfers from in:2m out:100m */
 
-/* 1 mhz side wires */
+/* 2 mhz side wires */
 wire [HADDR_WIDTH+16-1:0] wr_fifo;
 wire wr_enable;      /* wr_enable ] <-> [ wr : wr_enable to push fifo */
 wire wr_full;        /* wr_full   ] <-> [ full : signal that we are full */
@@ -76,7 +76,7 @@ wire ctrl_busy;       /* rd ] <-> [ busy : pop fifo when ctrl not busy */
 wire ctrl_wr_enable;  /* .empty_n-wr_enable : signal ctrl data is ready */
 
 fifo #(.BUS_WIDTH(HADDR_WIDTH+16)) wr_fifoi (
-    .wr_clk        (clk1m),
+    .wr_clk        (clk2m),
     .rd_clk        (clk100m),
     .wr_data       (wr_fifo),
     .rd_data       (wro_fifo),
@@ -87,8 +87,8 @@ fifo #(.BUS_WIDTH(HADDR_WIDTH+16)) wr_fifoi (
     .rst_n         (RESET_N)
 );
 
-/* Address 25-bit transfers from in:1m out:100m */
-/* 1 mhz side wires */
+/* Address 25-bit transfers from in:2m out:100m */
+/* 2 mhz side wires */
 wire        rd_enable;  /*  rd_enable -wr : rd_enable to push rd addr to fifo */
 wire        rdaddr_full;/* rdaddr_full-full : signal we cannot read more */
 
@@ -97,7 +97,7 @@ wire [HADDR_WIDTH-1:0] rdao_fifo;
 wire ctrl_rd_enable;     /* empty_n - rd_enable: signal ctrl addr ready */
 
 fifo #(.BUS_WIDTH(HADDR_WIDTH)) rdaddr_fifoi (
-    .wr_clk        (clk1m),
+    .wr_clk        (clk2m),
     .rd_clk        (clk100m),
     .wr_data       (wr_fifo[HADDR_WIDTH+16-1:16]),
     .rd_data       (rdao_fifo),
@@ -112,15 +112,15 @@ fifo #(.BUS_WIDTH(HADDR_WIDTH)) rdaddr_fifoi (
 wire [15:0] rddo_fifo;
 wire ctrl_rd_ready;     /* wr - rd_ready - push data from dram to fifo */
 
-/* 1mhz side wires */
+/* 2mhz side wires */
 wire [15:0] rddata_fifo;
 wire        rd_ready;   /* rd_ready-empty_n- signal interface data ready */
 wire        rd_ack;     /* rd_ack - rd     - pop fifo after data read */
 
-/* Incoming 16-bit data transfers from in:100m out:1m */
+/* Incoming 16-bit data transfers from in:100m out:2m */
 fifo #(.BUS_WIDTH(16)) rddata_fifoi (
     .wr_clk        (clk100m),
-    .rd_clk        (clk1m),
+    .rd_clk        (clk2m),
     .wr_data       (rddo_fifo),
     .rd_data       (rddata_fifo),
     .rd            (rd_ack),
@@ -187,7 +187,7 @@ de0cv_interface #(.HADDR_WIDTH(HADDR_WIDTH)) de0cv_interfacei (
 
   /* basics */
     .rst_n        (RESET_N),
-    .clk          (clk1m)
+    .clk          (clk2m)
 
 );
 
