@@ -1,8 +1,8 @@
 /**
- * simple controller for ISSI IS42S16160G-7 SDRAM found in De0 Nano
- *  16Mbit x 16 data bit bus (32 megabytes)
+ * simple controller for ISSI IS42S16320F SDRAM found on DE0-CV
+ *  32M x 16 data bit bus (64 megabytes)
  *  Default options
- *    133Mhz
+ *    100Mhz
  *    CAS 3
  *
  *  Very simple host interface
@@ -42,14 +42,14 @@ module sdram_controller (
 
 /* Internal Parameters */
 parameter ROW_WIDTH = 13;
-parameter COL_WIDTH = 9;
+parameter COL_WIDTH = 10;
 parameter BANK_WIDTH = 2;
 
 parameter SDRADDR_WIDTH = ROW_WIDTH > COL_WIDTH ? ROW_WIDTH : COL_WIDTH;
 parameter HADDR_WIDTH = BANK_WIDTH + ROW_WIDTH + COL_WIDTH;
 
-parameter CLK_FREQUENCY = 133;  // Mhz
-parameter REFRESH_TIME =  32;   // ms     (how often we need to refresh)
+parameter CLK_FREQUENCY = 100;  // Mhz
+parameter REFRESH_TIME =  64;   // ms     (how often we need to refresh)
 parameter REFRESH_COUNT = 8192; // cycles (how many refreshes required per refresh time)
 
 // clk / refresh =  clk / sec
@@ -246,20 +246,16 @@ begin
 
      // Examples for math
      //               BANK  ROW    COL
-     // HADDR_WIDTH   2 +   13 +   9   = 24
+     // HADDR_WIDTH   2 +   13 +   10  = 25
      // SDRADDR_WIDTH 13
 
      // Set CAS address to:
      //   0s,
      //   1 (A10 is always for auto precharge),
-     //   0s,
-     //   column address
-     addr_r = {
-               {SDRADDR_WIDTH-(11){1'b0}},
-               1'b1,                       /* A10 */
-               {10-COL_WIDTH{1'b0}},
-               haddr_r[COL_WIDTH-1:0]
-              };
+     //   column address on A[COL_WIDTH-1:0]
+     addr_r = {SDRADDR_WIDTH{1'b0}};
+     addr_r[10] = 1'b1;                       /* A10 auto-precharge */
+     addr_r[COL_WIDTH-1:0] = haddr_r[COL_WIDTH-1:0];
      end
    else if (state == INIT_LOAD)
      begin

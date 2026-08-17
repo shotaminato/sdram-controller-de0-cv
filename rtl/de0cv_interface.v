@@ -1,21 +1,21 @@
-/* De0 Nano interface for testing sdram controller 
- * Handles interpreting buttons and switches 
+/* DE0-CV interface for testing sdram controller
+ * Handles interpreting buttons and switches
  * to talk to the sdram controller.
  */
 
-module dnano_interface (
+module de0cv_interface (
   /* Human Interface */
-  button_n, dip, leds,
+  button_n, sw, leds,
 
   /* Controller Interface */
   haddr,     // RW-FIFO- data1
   busy,      // RW-FIFO- full
-  
+
   wr_enable, // WR-FIFO- write
   wr_data,   // WR-FIFO- data2
-  
+
   rd_enable,  //RO-FIFO- write
-  
+
   rd_data,    //RI-FIFO- data
   rd_rdy,    // RI-FIFO-~empty
   rd_ack,    // RI-FIFO- read
@@ -25,15 +25,15 @@ module dnano_interface (
 
 );
 
-parameter HADDR_WIDTH = 24;
+parameter HADDR_WIDTH = 25;
 
 // @ 1mhz    19bit (512K) is about 1/2 second
 // @ 100mhz  26bit (64M)  is about 1/2 second
 localparam DOUBlE_CLICK_WAIT = 19;
 localparam LED_BLINK = 20;
- 
+
 input        button_n;
-input  [3:0] dip;
+input  [3:0] sw;
 output [7:0] leds;
 
 output [HADDR_WIDTH-1:0]   haddr;
@@ -66,21 +66,22 @@ wire  dbl_clck_rst_n;
 //  1      1     - busy  is on  (be-low)
 assign dbl_clck_rst_n = rst_n & ~busy;
 
-// expand the dip data from 4 to 16 bits
-assign wr_data = {dip, dip, ~dip, ~dip};
+// expand the switch data from 4 to 16 bits
+assign wr_data = {sw, sw, ~sw, ~sw};
 // toggle leds between sdram msb and lsb
-assign leds = led_cnt[LED_BLINK-1] ? rd_data_r[15:8] : rd_data_r[7:0]; 
+assign leds = led_cnt[LED_BLINK-1] ? rd_data_r[15:8] : rd_data_r[7:0];
 
-assign haddr  = {(HADDR_WIDTH/4){dip}};
+// HADDR_WIDTH may not be a multiple of 4 (25-bit DE0-CV address)
+assign haddr  = {{(HADDR_WIDTH%4){1'b0}}, {(HADDR_WIDTH/4){sw}}};
 assign rd_ack = rd_ack_r;
 
 // handle led counter should just loop every half second
-always @ (posedge clk) 
- if (~rst_n) 
+always @ (posedge clk)
+ if (~rst_n)
   led_cnt <= {LED_BLINK{1'b0}};
  else
   led_cnt <= led_cnt + 1'b1;
-   
+
 
 always @ (posedge clk)
  if (~rst_n)
@@ -89,19 +90,19 @@ always @ (posedge clk)
    rd_ack_r <= 1'b0;
    end
  else
-   begin   
+   begin
    rd_ack_r <= rd_rdy;
-   
+
    if (rd_rdy)
      rd_data_r <= rd_data;
-   else 
+   else
      rd_data_r <= rd_data_r;
    end
-   
+
 double_click #(.WAIT_WIDTH(DOUBlE_CLICK_WAIT)) double_clicki (
   .button  (~button_n),
   .single  (wr_enable),
-  .double  (rd_enable),  
+  .double  (rd_enable),
   .clk     (clk),
   .rst_n   (dbl_clck_rst_n)
 );

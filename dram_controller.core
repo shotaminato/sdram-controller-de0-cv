@@ -1,11 +1,11 @@
 CAPI=1
 [main]
-description = "Stafford's toy dram controller for de0 nano"
+description = "Stafford's toy dram controller for DE0-CV"
 simulators = icarus
 
 [fileset rtl_files]
 files =
- rtl/dnano_interface.v
+ rtl/de0cv_interface.v
  rtl/double_click.v
  rtl/fifo.v
  rtl/sdram_controller.v
@@ -17,8 +17,7 @@ usage = sim synth
 scope = private
 files =
  rtl/toplevel.v
- quartus/pll_100m.v
- quartus/pll_1m.v
+ quartus/pll.v
 file_type = verilogSource
 usage = synth
 
