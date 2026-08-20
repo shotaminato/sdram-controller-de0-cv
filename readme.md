@@ -24,6 +24,17 @@ Target hardware (from the DE0-CV User Manual)
  - Clock: `CLOCK_50` (PIN_M9), multiplied to 100 MHz for SDRAM
  - Quartus II / Quartus Prime **14.0 or later** is required for Cyclone V
 
+## SystemVerilog version
+
+For integration with SystemVerilog RTL, use these files instead of `rtl/sdram_controller.v`:
+
+ - `rtl/sdram_controller.sv` — same module name and host/SDRAM ports
+ - `rtl/dff.sv` / `rtl/dff.svh` — DFF / DFFE macros (no `always_ff` in the controller)
+
+Combinational logic is `assign` only. Do not compile `.v` and `.sv` in the same project (duplicate module). Add `rtl/` to the include path so `` `include "dff.svh" `` resolves.
+
+The module name is `sdram_controller`, so instantiation is unchanged. Override `CLK_FREQUENCY` if the clock is not 100 MHz.
+
 ```
 
  Host Interface          SDRAM Interface
