@@ -15,7 +15,8 @@ module sdram_controller #(
     parameter int HADDR_WIDTH   = BANK_WIDTH + ROW_WIDTH + COL_WIDTH,
     parameter int CLK_FREQUENCY = 100,  // MHz
     parameter int REFRESH_TIME  = 64,   // ms
-    parameter int REFRESH_COUNT = 8192
+    parameter int REFRESH_COUNT = 8192,
+    parameter int STATE_WIDTH   = 5
 ) (
     //--------------------------------------------------------------------------
     // Host interface
@@ -59,37 +60,37 @@ module sdram_controller #(
     //==========================================================================
     // FSM states
     //==========================================================================
-    localparam logic [4:0] IDLE       = 5'b00000;
+    localparam logic [STATE_WIDTH-1:0] IDLE       = 5'b00000;
 
     // Init
-    localparam logic [4:0] INIT_NOP1  = 5'b01000;
-    localparam logic [4:0] INIT_PRE1  = 5'b01001;
-    localparam logic [4:0] INIT_NOP2  = 5'b00101;
-    localparam logic [4:0] INIT_REF1  = 5'b01010;
-    localparam logic [4:0] INIT_NOP3  = 5'b01011;
-    localparam logic [4:0] INIT_REF2  = 5'b01100;
-    localparam logic [4:0] INIT_NOP4  = 5'b01101;
-    localparam logic [4:0] INIT_LOAD  = 5'b01110;
-    localparam logic [4:0] INIT_NOP5  = 5'b01111;
+    localparam logic [STATE_WIDTH-1:0] INIT_NOP1  = 5'b01000;
+    localparam logic [STATE_WIDTH-1:0] INIT_PRE1  = 5'b01001;
+    localparam logic [STATE_WIDTH-1:0] INIT_NOP2  = 5'b00101;
+    localparam logic [STATE_WIDTH-1:0] INIT_REF1  = 5'b01010;
+    localparam logic [STATE_WIDTH-1:0] INIT_NOP3  = 5'b01011;
+    localparam logic [STATE_WIDTH-1:0] INIT_REF2  = 5'b01100;
+    localparam logic [STATE_WIDTH-1:0] INIT_NOP4  = 5'b01101;
+    localparam logic [STATE_WIDTH-1:0] INIT_LOAD  = 5'b01110;
+    localparam logic [STATE_WIDTH-1:0] INIT_NOP5  = 5'b01111;
 
     // Refresh
-    localparam logic [4:0] REF_PRE    = 5'b00001;
-    localparam logic [4:0] REF_NOP1   = 5'b00010;
-    localparam logic [4:0] REF_REF    = 5'b00011;
-    localparam logic [4:0] REF_NOP2   = 5'b00100;
+    localparam logic [STATE_WIDTH-1:0] REF_PRE    = 5'b00001;
+    localparam logic [STATE_WIDTH-1:0] REF_NOP1   = 5'b00010;
+    localparam logic [STATE_WIDTH-1:0] REF_REF    = 5'b00011;
+    localparam logic [STATE_WIDTH-1:0] REF_NOP2   = 5'b00100;
 
     // Read
-    localparam logic [4:0] READ_ACT   = 5'b10000;
-    localparam logic [4:0] READ_NOP1  = 5'b10001;
-    localparam logic [4:0] READ_CAS   = 5'b10010;
-    localparam logic [4:0] READ_NOP2  = 5'b10011;
-    localparam logic [4:0] READ_READ  = 5'b10100;
+    localparam logic [STATE_WIDTH-1:0] READ_ACT   = 5'b10000;
+    localparam logic [STATE_WIDTH-1:0] READ_NOP1  = 5'b10001;
+    localparam logic [STATE_WIDTH-1:0] READ_CAS   = 5'b10010;
+    localparam logic [STATE_WIDTH-1:0] READ_NOP2  = 5'b10011;
+    localparam logic [STATE_WIDTH-1:0] READ_READ  = 5'b10100;
 
     // Write
-    localparam logic [4:0] WRIT_ACT   = 5'b11000;
-    localparam logic [4:0] WRIT_NOP1  = 5'b11001;
-    localparam logic [4:0] WRIT_CAS   = 5'b11010;
-    localparam logic [4:0] WRIT_NOP2  = 5'b11011;
+    localparam logic [STATE_WIDTH-1:0] WRIT_ACT   = 5'b11000;
+    localparam logic [STATE_WIDTH-1:0] WRIT_NOP1  = 5'b11001;
+    localparam logic [STATE_WIDTH-1:0] WRIT_CAS   = 5'b11010;
+    localparam logic [STATE_WIDTH-1:0] WRIT_NOP2  = 5'b11011;
 
     //==========================================================================
     // SDRAM commands  {CKE, CS_n, RAS_n, CAS_n, WE_n, BA1, BA0, A10}
@@ -111,13 +112,13 @@ module sdram_controller #(
     logic [3:0]               state_cnt;
     logic [9:0]               refresh_cnt;
     logic [7:0]               command;
-    logic [4:0]               state;
+    logic [STATE_WIDTH-1:0]   state;
     logic                     rd_ready_r;
 
     //==========================================================================
     // Combinational next / address
     //==========================================================================
-    logic [4:0]               next;
+    logic [STATE_WIDTH-1:0]   next;
     logic [7:0]               command_nxt;
     logic [3:0]               state_cnt_nxt;
     logic [SDRADDR_WIDTH-1:0] addr_r;
@@ -183,8 +184,8 @@ module sdram_controller #(
     //==========================================================================
     assign {clock_enable, cs_n, ras_n, cas_n, we_n} = command[7:3];
 
-    assign data_mask_high = ~state[4];
-    assign data_mask_low  = ~state[4];
+    assign data_mask_high = ~state[STATE_WIDTH-1];
+    assign data_mask_low  = ~state[STATE_WIDTH-1];
     assign rd_data        = rd_data_r;
     assign rd_ready       = rd_ready_r;
 
@@ -310,7 +311,7 @@ module sdram_controller #(
         | (is_rw_cas    ? addr_cas : '0)
         | (is_init_load ? addr_mrs : '0);
 
-    assign use_addr_r = state[4] | is_init_load;
+    assign use_addr_r = state[STATE_WIDTH-1] | is_init_load;
     assign addr_cmd   = {{(SDRADDR_WIDTH-11){1'b0}}, command[0], 10'd0};
 
     assign addr =
@@ -318,8 +319,8 @@ module sdram_controller #(
         | (~use_addr_r ? addr_cmd : '0);
 
     assign bank_addr =
-          (state[4]  ? bank_addr_r     : '0)
-        | (~state[4] ? command[2:1]    : '0);
+          (state[STATE_WIDTH-1]  ? bank_addr_r     : '0)
+        | (~state[STATE_WIDTH-1] ? command[2:1]    : '0);
 
     assign data = (state == WRIT_CAS) ? wr_data_r : 16'bz;
 
@@ -338,11 +339,11 @@ module sdram_controller #(
     //==========================================================================
     // Sequential elements (DFF / DFFE macros)
     //==========================================================================
-    `DFF(u_state,       5,           state,       next,                   clk, rst_n, INIT_NOP1)
+    `DFF(u_state,       STATE_WIDTH, state,       next,                   clk, rst_n, INIT_NOP1)
     `DFF(u_command,     8,           command,     command_nxt,            clk, rst_n, CMD_NOP)
     `DFF(u_state_cnt,   4,           state_cnt,   state_cnt_n,            clk, rst_n, 4'hf)
     `DFF(u_refresh_cnt, 10,          refresh_cnt, refresh_cnt_n,          clk, rst_n, 10'b0)
-    `DFF(u_busy,        1,           busy,        state[4],               clk, rst_n, 1'b0)
+    `DFF(u_busy,        1,           busy,        state[STATE_WIDTH-1],   clk, rst_n, 1'b0)
     `DFF(u_rd_ready,    1,           rd_ready_r,  (state == READ_READ),   clk, rst_n, 1'b0)
     `DFFE(u_haddr,      HADDR_WIDTH, haddr_r,     haddr_n,    haddr_en,   clk, rst_n, {HADDR_WIDTH{1'b0}})
     `DFFE(u_wr_data,    16,          wr_data_r,   wr_data,    wr_data_en, clk, rst_n, 16'b0)

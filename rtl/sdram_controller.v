@@ -47,6 +47,7 @@ parameter BANK_WIDTH = 2;
 
 parameter SDRADDR_WIDTH = ROW_WIDTH > COL_WIDTH ? ROW_WIDTH : COL_WIDTH;
 parameter HADDR_WIDTH = BANK_WIDTH + ROW_WIDTH + COL_WIDTH;
+parameter STATE_WIDTH = 5;
 
 parameter CLK_FREQUENCY = 100;  // Mhz
 parameter REFRESH_TIME =  64;   // ms     (how often we need to refresh)
@@ -61,9 +62,9 @@ localparam CYCLES_BETWEEN_REFRESH = ( CLK_FREQUENCY
                                     ) / REFRESH_COUNT;
 
 // STATES - State
-localparam IDLE      = 5'b00000;
+localparam [STATE_WIDTH-1:0] IDLE      = 5'b00000;
 
-localparam INIT_NOP1 = 5'b01000,
+localparam [STATE_WIDTH-1:0] INIT_NOP1 = 5'b01000,
            INIT_PRE1 = 5'b01001,
            INIT_NOP2 = 5'b00101,
            INIT_REF1 = 5'b01010,
@@ -73,18 +74,18 @@ localparam INIT_NOP1 = 5'b01000,
            INIT_LOAD = 5'b01110,
            INIT_NOP5 = 5'b01111;
 
-localparam REF_PRE  =  5'b00001,
+localparam [STATE_WIDTH-1:0] REF_PRE  =  5'b00001,
            REF_NOP1 =  5'b00010,
            REF_REF  =  5'b00011,
            REF_NOP2 =  5'b00100;
 
-localparam READ_ACT  = 5'b10000,
+localparam [STATE_WIDTH-1:0] READ_ACT  = 5'b10000,
            READ_NOP1 = 5'b10001,
            READ_CAS  = 5'b10010,
            READ_NOP2 = 5'b10011,
            READ_READ = 5'b10100;
 
-localparam WRIT_ACT  = 5'b11000,
+localparam [STATE_WIDTH-1:0] WRIT_ACT  = 5'b11000,
            WRIT_NOP1 = 5'b11001,
            WRIT_CAS  = 5'b11010,
            WRIT_NOP2 = 5'b11011;
@@ -150,18 +151,18 @@ reg [3:0] state_cnt;
 reg [9:0] refresh_cnt;
 
 reg [7:0] command;
-reg [4:0] state;
+reg [STATE_WIDTH-1:0] state;
 
 // TODO output addr[6:4] when programming mode register
 
 reg [7:0] command_nxt;
 reg [3:0] state_cnt_nxt;
-reg [4:0] next;
+reg [STATE_WIDTH-1:0] next;
 
 assign {clock_enable, cs_n, ras_n, cas_n, we_n} = command[7:3];
-// state[4] will be set if mode is read/write
-assign bank_addr      = (state[4]) ? bank_addr_r : command[2:1];
-assign addr           = (state[4] | state == INIT_LOAD) ? addr_r : { {SDRADDR_WIDTH-11{1'b0}}, command[0], 10'd0 };
+// state[STATE_WIDTH-1] will be set if mode is read/write
+assign bank_addr      = (state[STATE_WIDTH-1]) ? bank_addr_r : command[2:1];
+assign addr           = (state[STATE_WIDTH-1] | state == INIT_LOAD) ? addr_r : { {SDRADDR_WIDTH-11{1'b0}}, command[0], 10'd0 };
 
 assign data = (state == WRIT_CAS) ? wr_data_r : 16'bz;
 assign rd_ready = rd_ready_r;
@@ -202,7 +203,7 @@ always @ (posedge clk)
     else
       rd_ready_r <= 1'b0;
 
-    busy <= state[4];
+    busy <= state[STATE_WIDTH-1];
 
     if (rd_enable)
       haddr_r <= rd_addr;
@@ -225,7 +226,7 @@ always @ (posedge clk)
 /* Handle logic for sending addresses to SDRAM based on current state*/
 always @*
 begin
-    if (state[4])
+    if (state[STATE_WIDTH-1])
       {data_mask_low_r, data_mask_high_r} = 2'b00;
     else
       {data_mask_low_r, data_mask_high_r} = 2'b11;
