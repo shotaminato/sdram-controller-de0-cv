@@ -58,7 +58,7 @@ module sdram_controller #(
                                             ) / REFRESH_COUNT;
 
     //==========================================================================
-    // FSM states
+    // FSM states  (MSB = 1 means READ/WRITE)
     //==========================================================================
     localparam logic [STATE_WIDTH-1:0] IDLE       = 5'b00000;
 
