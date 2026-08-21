@@ -65,13 +65,13 @@ localparam IDLE      = 5'b00000;
 
 localparam INIT_NOP1 = 5'b01000,
            INIT_PRE1 = 5'b01001,
-           INIT_NOP1_1=5'b00101,
+           INIT_NOP2 = 5'b00101,
            INIT_REF1 = 5'b01010,
-           INIT_NOP2 = 5'b01011,
+           INIT_NOP3 = 5'b01011,
            INIT_REF2 = 5'b01100,
-           INIT_NOP3 = 5'b01101,
+           INIT_NOP4 = 5'b01101,
            INIT_LOAD = 5'b01110,
-           INIT_NOP4 = 5'b01111;
+           INIT_NOP5 = 5'b01111;
 
 localparam REF_PRE  =  5'b00001,
            REF_NOP1 =  5'b00010,
@@ -306,39 +306,39 @@ begin
             end
           INIT_PRE1:
             begin
-            next = INIT_NOP1_1;
+            next = INIT_NOP2;
             end
-          INIT_NOP1_1:
+          INIT_NOP2:
             begin
             next = INIT_REF1;
             command_nxt = CMD_REF;
             end
           INIT_REF1:
             begin
-            next = INIT_NOP2;
+            next = INIT_NOP3;
             state_cnt_nxt = 4'd7;
             end
-          INIT_NOP2:
+          INIT_NOP3:
             begin
             next = INIT_REF2;
             command_nxt = CMD_REF;
             end
           INIT_REF2:
             begin
-            next = INIT_NOP3;
+            next = INIT_NOP4;
             state_cnt_nxt = 4'd7;
             end
-          INIT_NOP3:
+          INIT_NOP4:
             begin
             next = INIT_LOAD;
             command_nxt = CMD_MRS;
             end
           INIT_LOAD:
             begin
-            next = INIT_NOP4;
+            next = INIT_NOP5;
             state_cnt_nxt = 4'd1;
             end
-          // INIT_NOP4: default - IDLE
+          // INIT_NOP5: default - IDLE
 
           // REFRESH
           REF_PRE:

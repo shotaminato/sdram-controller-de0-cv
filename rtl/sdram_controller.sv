@@ -64,13 +64,13 @@ module sdram_controller #(
     // Init
     localparam logic [4:0] INIT_NOP1  = 5'b01000;
     localparam logic [4:0] INIT_PRE1  = 5'b01001;
-    localparam logic [4:0] INIT_NOP1_1= 5'b00101;
+    localparam logic [4:0] INIT_NOP2  = 5'b00101;
     localparam logic [4:0] INIT_REF1  = 5'b01010;
-    localparam logic [4:0] INIT_NOP2  = 5'b01011;
+    localparam logic [4:0] INIT_NOP3  = 5'b01011;
     localparam logic [4:0] INIT_REF2  = 5'b01100;
-    localparam logic [4:0] INIT_NOP3  = 5'b01101;
+    localparam logic [4:0] INIT_NOP4  = 5'b01101;
     localparam logic [4:0] INIT_LOAD  = 5'b01110;
-    localparam logic [4:0] INIT_NOP4  = 5'b01111;
+    localparam logic [4:0] INIT_NOP5  = 5'b01111;
 
     // Refresh
     localparam logic [4:0] REF_PRE    = 5'b00001;
@@ -159,11 +159,11 @@ module sdram_controller #(
     //--------------------------------------------------------------------------
     logic                     adv_init_nop1;
     logic                     adv_init_pre1;
-    logic                     adv_init_nop1_1;
-    logic                     adv_init_ref1;
     logic                     adv_init_nop2;
-    logic                     adv_init_ref2;
+    logic                     adv_init_ref1;
     logic                     adv_init_nop3;
+    logic                     adv_init_ref2;
+    logic                     adv_init_nop4;
     logic                     adv_init_load;
     logic                     adv_ref_pre;
     logic                     adv_ref_nop1;
@@ -205,11 +205,11 @@ module sdram_controller #(
     //==========================================================================
     assign adv_init_nop1   = advance & (state == INIT_NOP1);
     assign adv_init_pre1   = advance & (state == INIT_PRE1);
-    assign adv_init_nop1_1 = advance & (state == INIT_NOP1_1);
-    assign adv_init_ref1   = advance & (state == INIT_REF1);
     assign adv_init_nop2   = advance & (state == INIT_NOP2);
-    assign adv_init_ref2   = advance & (state == INIT_REF2);
+    assign adv_init_ref1   = advance & (state == INIT_REF1);
     assign adv_init_nop3   = advance & (state == INIT_NOP3);
+    assign adv_init_ref2   = advance & (state == INIT_REF2);
+    assign adv_init_nop4   = advance & (state == INIT_NOP4);
     assign adv_init_load   = advance & (state == INIT_LOAD);
     assign adv_ref_pre     = advance & (state == REF_PRE);
     assign adv_ref_nop1    = advance & (state == REF_NOP1);
@@ -223,8 +223,8 @@ module sdram_controller #(
     assign adv_read_nop2   = advance & (state == READ_NOP2);
 
     assign adv_to_idle = advance & ~(
-        adv_init_nop1   | adv_init_pre1   | adv_init_nop1_1 | adv_init_ref1 |
-        adv_init_nop2   | adv_init_ref2   | adv_init_nop3   | adv_init_load |
+        adv_init_nop1   | adv_init_pre1   | adv_init_nop2 | adv_init_ref1 |
+        adv_init_nop3   | adv_init_ref2   | adv_init_nop4   | adv_init_load |
         adv_ref_pre     | adv_ref_nop1    | adv_ref_ref     |
         adv_writ_act    | adv_writ_nop1   | adv_writ_cas    |
         adv_read_act    | adv_read_nop1   | adv_read_cas    | adv_read_nop2
@@ -240,13 +240,13 @@ module sdram_controller #(
         | (idle_hold       ? IDLE       : '0)
         | (hold            ? state      : '0)
         | (adv_init_nop1   ? INIT_PRE1  : '0)
-        | (adv_init_pre1   ? INIT_NOP1_1: '0)
-        | (adv_init_nop1_1 ? INIT_REF1  : '0)
-        | (adv_init_ref1   ? INIT_NOP2  : '0)
-        | (adv_init_nop2   ? INIT_REF2  : '0)
-        | (adv_init_ref2   ? INIT_NOP3  : '0)
-        | (adv_init_nop3   ? INIT_LOAD  : '0)
-        | (adv_init_load   ? INIT_NOP4  : '0)
+        | (adv_init_pre1   ? INIT_NOP2  : '0)
+        | (adv_init_nop2   ? INIT_REF1  : '0)
+        | (adv_init_ref1   ? INIT_NOP3  : '0)
+        | (adv_init_nop3   ? INIT_REF2  : '0)
+        | (adv_init_ref2   ? INIT_NOP4  : '0)
+        | (adv_init_nop4   ? INIT_LOAD  : '0)
+        | (adv_init_load   ? INIT_NOP5  : '0)
         | (adv_ref_pre     ? REF_NOP1   : '0)
         | (adv_ref_nop1    ? REF_REF    : '0)
         | (adv_ref_ref     ? REF_NOP2   : '0)
@@ -263,7 +263,7 @@ module sdram_controller #(
     // FSM: next command
     //==========================================================================
     assign adv_cmd_nop = advance & ~(
-        adv_init_nop1 | adv_init_nop1_1 | adv_init_nop2 | adv_init_nop3 |
+        adv_init_nop1 | adv_init_nop2 | adv_init_nop3 | adv_init_nop4 |
         adv_ref_nop1  | adv_writ_nop1   | adv_read_nop1
     );
 
@@ -274,9 +274,9 @@ module sdram_controller #(
         | (idle_hold       ? CMD_NOP  : '0)
         | (hold            ? command  : '0)
         | (adv_init_nop1   ? CMD_PALL : '0)
-        | (adv_init_nop1_1 ? CMD_REF  : '0)
         | (adv_init_nop2   ? CMD_REF  : '0)
-        | (adv_init_nop3   ? CMD_MRS  : '0)
+        | (adv_init_nop3   ? CMD_REF  : '0)
+        | (adv_init_nop4   ? CMD_MRS  : '0)
         | (adv_ref_nop1    ? CMD_REF  : '0)
         | (adv_writ_nop1   ? CMD_WRIT : '0)
         | (adv_read_nop1   ? CMD_READ : '0)
