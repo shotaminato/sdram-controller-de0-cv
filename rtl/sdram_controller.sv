@@ -17,7 +17,9 @@ module sdram_controller #(
     parameter int REFRESH_TIME  = 64,   // ms
     parameter int REFRESH_COUNT = 8192
 ) (
-    /* HOST INTERFACE */
+    //--------------------------------------------------------------------------
+    // Host interface
+    //--------------------------------------------------------------------------
     input  logic [HADDR_WIDTH-1:0] wr_addr,
     input  logic [15:0]            wr_data,
     input  logic                   wr_enable,
@@ -31,7 +33,9 @@ module sdram_controller #(
     input  logic                   rst_n,
     input  logic                   clk,
 
-    /* SDRAM SIDE */
+    //--------------------------------------------------------------------------
+    // SDRAM interface
+    //--------------------------------------------------------------------------
     output logic [SDRADDR_WIDTH-1:0] addr,
     output logic [BANK_WIDTH-1:0]    bank_addr,
     inout  wire  [15:0]              data,
@@ -44,13 +48,20 @@ module sdram_controller #(
     output logic                     data_mask_high
 );
 
+    //==========================================================================
+    // Refresh interval
+    //==========================================================================
     localparam int CYCLES_BETWEEN_REFRESH = (CLK_FREQUENCY
                                              * 1_000
                                              * REFRESH_TIME
                                             ) / REFRESH_COUNT;
 
+    //==========================================================================
+    // FSM states
+    //==========================================================================
     localparam logic [4:0] IDLE       = 5'b00000;
 
+    // Init
     localparam logic [4:0] INIT_NOP1  = 5'b01000;
     localparam logic [4:0] INIT_PRE1  = 5'b01001;
     localparam logic [4:0] INIT_NOP1_1= 5'b00101;
@@ -61,24 +72,28 @@ module sdram_controller #(
     localparam logic [4:0] INIT_LOAD  = 5'b01110;
     localparam logic [4:0] INIT_NOP4  = 5'b01111;
 
+    // Refresh
     localparam logic [4:0] REF_PRE    = 5'b00001;
     localparam logic [4:0] REF_NOP1   = 5'b00010;
     localparam logic [4:0] REF_REF    = 5'b00011;
     localparam logic [4:0] REF_NOP2   = 5'b00100;
 
+    // Read
     localparam logic [4:0] READ_ACT   = 5'b10000;
     localparam logic [4:0] READ_NOP1  = 5'b10001;
     localparam logic [4:0] READ_CAS   = 5'b10010;
     localparam logic [4:0] READ_NOP2  = 5'b10011;
     localparam logic [4:0] READ_READ  = 5'b10100;
 
+    // Write
     localparam logic [4:0] WRIT_ACT   = 5'b11000;
     localparam logic [4:0] WRIT_NOP1  = 5'b11001;
     localparam logic [4:0] WRIT_CAS   = 5'b11010;
     localparam logic [4:0] WRIT_NOP2  = 5'b11011;
 
-    // Commands              CCRCWBBA
-    //                       ESSSE100
+    //==========================================================================
+    // SDRAM commands  {CKE, CS_n, RAS_n, CAS_n, WE_n, BA1, BA0, A10}
+    //==========================================================================
     localparam logic [7:0] CMD_PALL = 8'b10010001;
     localparam logic [7:0] CMD_REF  = 8'b10001000;
     localparam logic [7:0] CMD_NOP  = 8'b10111000;
@@ -87,6 +102,9 @@ module sdram_controller #(
     localparam logic [7:0] CMD_READ = 8'b10101001;
     localparam logic [7:0] CMD_WRIT = 8'b10100001;
 
+    //==========================================================================
+    // Registers (DFF)
+    //==========================================================================
     logic [HADDR_WIDTH-1:0]   haddr_r;
     logic [15:0]              wr_data_r;
     logic [15:0]              rd_data_r;
@@ -96,6 +114,9 @@ module sdram_controller #(
     logic [4:0]               state;
     logic                     rd_ready_r;
 
+    //==========================================================================
+    // Combinational next / address
+    //==========================================================================
     logic [4:0]               next;
     logic [7:0]               command_nxt;
     logic [3:0]               state_cnt_nxt;
@@ -109,6 +130,9 @@ module sdram_controller #(
     logic                     wr_data_en;
     logic                     rd_data_en;
 
+    //--------------------------------------------------------------------------
+    // FSM decode
+    //--------------------------------------------------------------------------
     logic                     in_idle;
     logic                     cnt_zero;
     logic                     need_ref;
@@ -118,6 +142,9 @@ module sdram_controller #(
     logic                     hold;
     logic                     advance;
 
+    //--------------------------------------------------------------------------
+    // SDRAM address select
+    //--------------------------------------------------------------------------
     logic                     is_rw_act;
     logic                     is_rw_cas;
     logic                     is_init_load;
@@ -127,6 +154,9 @@ module sdram_controller #(
     logic [SDRADDR_WIDTH-1:0] addr_mrs;
     logic [SDRADDR_WIDTH-1:0] addr_cmd;
 
+    //--------------------------------------------------------------------------
+    // One-cycle advance strobes (state_cnt == 0)
+    //--------------------------------------------------------------------------
     logic                     adv_init_nop1;
     logic                     adv_init_pre1;
     logic                     adv_init_nop1_1;
@@ -148,6 +178,9 @@ module sdram_controller #(
     logic                     adv_to_idle;
     logic                     adv_cmd_nop;
 
+    //==========================================================================
+    // Host-side outputs
+    //==========================================================================
     assign {clock_enable, cs_n, ras_n, cas_n, we_n} = command[7:3];
 
     assign data_mask_high = ~state[4];
@@ -155,6 +188,9 @@ module sdram_controller #(
     assign rd_data        = rd_data_r;
     assign rd_ready       = rd_ready_r;
 
+    //==========================================================================
+    // FSM: IDLE / wait-counter / refresh vs read vs write
+    //==========================================================================
     assign in_idle  = (state == IDLE);
     assign cnt_zero = ~|state_cnt;
     assign need_ref = in_idle & (refresh_cnt >= CYCLES_BETWEEN_REFRESH);
@@ -164,6 +200,9 @@ module sdram_controller #(
     assign hold     = ~in_idle & ~cnt_zero;
     assign advance  = ~in_idle &  cnt_zero;
 
+    //==========================================================================
+    // FSM: per-state advance strobes
+    //==========================================================================
     assign adv_init_nop1   = advance & (state == INIT_NOP1);
     assign adv_init_pre1   = advance & (state == INIT_PRE1);
     assign adv_init_nop1_1 = advance & (state == INIT_NOP1_1);
@@ -191,6 +230,9 @@ module sdram_controller #(
         adv_read_act    | adv_read_nop1   | adv_read_cas    | adv_read_nop2
     );
 
+    //==========================================================================
+    // FSM: next state
+    //==========================================================================
     assign next =
           (need_ref        ? REF_PRE    : '0)
         | (idle_rd         ? READ_ACT   : '0)
@@ -217,6 +259,9 @@ module sdram_controller #(
         | (adv_read_nop2   ? READ_READ  : '0)
         | (adv_to_idle     ? IDLE       : '0);
 
+    //==========================================================================
+    // FSM: next command
+    //==========================================================================
     assign adv_cmd_nop = advance & ~(
         adv_init_nop1 | adv_init_nop1_1 | adv_init_nop2 | adv_init_nop3 |
         adv_ref_nop1  | adv_writ_nop1   | adv_read_nop1
@@ -237,11 +282,17 @@ module sdram_controller #(
         | (adv_read_nop1   ? CMD_READ : '0)
         | (adv_cmd_nop     ? CMD_NOP  : '0);
 
+    //==========================================================================
+    // FSM: wait-counter load value
+    //==========================================================================
     assign state_cnt_nxt =
           ((adv_init_ref1 | adv_init_ref2 | adv_ref_ref) ? 4'd7 : '0)
         | ((adv_init_load | adv_writ_act | adv_writ_cas
             | adv_read_act | adv_read_cas)               ? 4'd1 : '0);
 
+    //==========================================================================
+    // SDRAM address / bank / DQ
+    //==========================================================================
     assign is_rw_act    = (state == READ_ACT) | (state == WRIT_ACT);
     assign is_rw_cas    = (state == READ_CAS) | (state == WRIT_CAS);
     assign is_init_load = (state == INIT_LOAD);
@@ -272,6 +323,9 @@ module sdram_controller #(
 
     assign data = (state == WRIT_CAS) ? wr_data_r : 16'bz;
 
+    //==========================================================================
+    // DFF data / enables
+    //==========================================================================
     assign haddr_en    = rd_enable | wr_enable;
     assign haddr_n     = (rd_enable ? rd_addr : '0) | (~rd_enable & wr_enable ? wr_addr : '0);
     assign wr_data_en  = wr_enable;
@@ -281,6 +335,9 @@ module sdram_controller #(
           ((state == REF_NOP2) ? 10'd0 : '0)
         | ((state != REF_NOP2) ? (refresh_cnt + 10'd1) : '0);
 
+    //==========================================================================
+    // Sequential elements (DFF / DFFE macros)
+    //==========================================================================
     `DFF(u_state,       5,           state,       next,                   clk, rst_n, INIT_NOP1)
     `DFF(u_command,     8,           command,     command_nxt,            clk, rst_n, CMD_NOP)
     `DFF(u_state_cnt,   4,           state_cnt,   state_cnt_n,            clk, rst_n, 4'hf)

@@ -1,4 +1,7 @@
-// DFF primitive. Sequential always is allowed only in this module.
+//==============================================================================
+// DFF primitive
+// Sequential always is allowed only in this module.
+//==============================================================================
 module dff #(
     parameter int WIDTH = 1,
     parameter logic [WIDTH-1:0] RST_VAL = '0
@@ -14,6 +17,9 @@ module dff #(
     end
 endmodule
 
+//==============================================================================
+// DFFE: clock-enable wrapper around dff
+//==============================================================================
 module dffe #(
     parameter int WIDTH = 1,
     parameter logic [WIDTH-1:0] RST_VAL = '0
