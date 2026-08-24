@@ -35,6 +35,15 @@ Combinational logic is `assign` only. Do not compile `.v` and `.sv` in the same 
 
 The module name is `sdram_controller`, so instantiation is unchanged. Override `CLK_FREQUENCY` if the clock is not 100 MHz.
 
+## Simulation (Verilog vs SystemVerilog)
+
+`tb/` is a standalone Icarus Verilog test (no FuseSoC). The same self-checking bench is compiled once with `rtl/sdram_controller.v` and once with `rtl/sdram_controller.sv`, then per-cycle pin dumps are compared.
+
+```
+# requires iverilog / vvp
+make -C tb cmp
+```
+
 ```
 
  Host Interface          SDRAM Interface
