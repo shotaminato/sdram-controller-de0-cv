@@ -2,8 +2,9 @@
  * Minimal SDRAM behavioral model for controller tests.
  * Burst length 1, CAS latency 3, auto-precharge is ignored (row stays tracked).
  *
- * Commands are sampled #1 after posedge so registered controller outputs have
- * settled (same timing for Verilog and SystemVerilog DUTs).
+ * Commands and DQ are sampled on negedge so registered controller outputs have
+ * settled. Read data is then pipelined to be valid on the posedge where the
+ * controller captures (READ_READ / rd_ready).
  */
 module sdram_model (
     input         clk,
@@ -23,13 +24,17 @@ module sdram_model (
     wire rd     = cke_en & ~cs_n &  ras_n & ~cas_n &  we_n;
     wire wr     = cke_en & ~cs_n &  ras_n & ~cas_n & ~we_n;
 
+    reg        act_r, rd_r, wr_r;
+    reg [12:0] addr_r;
+    reg [1:0]  ba_r;
+    reg [15:0] dq_r;
+
     reg [12:0] open_row [0:3];
     /* {ba, row[3:0], col[9:0]} — enough unique rows for the self-check */
     reg [15:0] mem [0:65535];
 
-    wire [9:0] col = addr[9:0];
-    wire [15:0] wr_idx = {ba, open_row[ba][3:0], col};
-    wire [15:0] rd_idx = wr_idx;
+    wire [9:0]  col    = addr_r[9:0];
+    wire [15:0] mem_idx = {ba_r, open_row[ba_r][3:0], col};
 
     reg        rd_v0, rd_v1, rd_v2;
     reg [15:0] rd_d0, rd_d1, rd_d2;
@@ -42,6 +47,12 @@ module sdram_model (
             open_row[i] = 13'd0;
         for (i = 0; i < 65536; i = i + 1)
             mem[i] = 16'd0;
+        act_r = 1'b0;
+        rd_r  = 1'b0;
+        wr_r  = 1'b0;
+        addr_r = 13'd0;
+        ba_r   = 2'd0;
+        dq_r   = 16'd0;
         rd_v0 = 1'b0;
         rd_v1 = 1'b0;
         rd_v2 = 1'b0;
@@ -50,22 +61,24 @@ module sdram_model (
         rd_d2 = 16'd0;
     end
 
+    always @(negedge clk) begin
+        act_r  <= act;
+        rd_r   <= rd;
+        wr_r   <= wr;
+        addr_r <= addr;
+        ba_r   <= ba;
+        dq_r   <= dq;
+    end
+
     always @(posedge clk) begin
-        #1;
-        rd_v0 <= 1'b0;
-        rd_d0 <= 16'd0;
+        if (act_r)
+            open_row[ba_r] <= addr_r;
 
-        if (act)
-            open_row[ba] <= addr;
+        if (wr_r)
+            mem[mem_idx] <= dq_r;
 
-        if (wr)
-            mem[wr_idx] <= dq;
-
-        if (rd) begin
-            rd_v0 <= 1'b1;
-            rd_d0 <= mem[rd_idx];
-        end
-
+        rd_v0 <= rd_r;
+        rd_d0 <= mem[mem_idx];
         rd_v1 <= rd_v0;
         rd_d1 <= rd_d0;
         rd_v2 <= rd_v1;
