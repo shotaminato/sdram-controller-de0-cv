@@ -47,7 +47,7 @@ parameter BANK_WIDTH = 2;
 
 parameter SDRADDR_WIDTH = ROW_WIDTH > COL_WIDTH ? ROW_WIDTH : COL_WIDTH;
 parameter HADDR_WIDTH = BANK_WIDTH + ROW_WIDTH + COL_WIDTH;
-parameter STATE_WIDTH = 5;
+localparam STATE_WIDTH = 5;
 
 parameter CLK_FREQUENCY = 100;  // Mhz
 parameter REFRESH_TIME =  64;   // ms     (how often we need to refresh)

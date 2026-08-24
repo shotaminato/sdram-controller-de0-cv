@@ -15,8 +15,7 @@ module sdram_controller #(
     parameter int HADDR_WIDTH   = BANK_WIDTH + ROW_WIDTH + COL_WIDTH,
     parameter int CLK_FREQUENCY = 100,  // MHz
     parameter int REFRESH_TIME  = 64,   // ms
-    parameter int REFRESH_COUNT = 8192,
-    parameter int STATE_WIDTH   = 5
+    parameter int REFRESH_COUNT = 8192
 ) (
     //--------------------------------------------------------------------------
     // Host interface
@@ -60,6 +59,8 @@ module sdram_controller #(
     //==========================================================================
     // FSM states  (MSB = 1 means READ/WRITE)
     //==========================================================================
+    localparam int STATE_WIDTH = 5;
+
     localparam logic [STATE_WIDTH-1:0] IDLE       = 5'b00000;
 
     // Init
