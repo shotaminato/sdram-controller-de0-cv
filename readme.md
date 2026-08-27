@@ -99,61 +99,69 @@ Terasic DE0-CV names (`CLOCK_50`, `RESET_N`, `KEY`, `SW`, `LEDR`, `DRAM_*`).
 ## State machine
 
 Verilog (`rtl/sdram_controller.v`) and SystemVerilog (`rtl/sdram_controller.sv`) share this FSM.
-`state_cnt != 0` holds the current state (and the current SDRAM command). The command shown in each bubble is what is on the bus while that state is active. `busy` is `state[STATE_WIDTH-1]` (high in READ_* and WRIT_* only).
+`state_cnt != 0` holds the current state (and the current SDRAM command). Commands while each state is active are in the table below. `busy` is `state[STATE_WIDTH-1]` (high in READ_* and WRIT_* only).
 
 IDLE priority: refresh, then `rd_enable`, then `wr_enable`.
 
 ```mermaid
-stateDiagram-v2
-    [*] --> INIT_NOP1: reset / NOP, cnt=15
+flowchart TB
+    reset([reset]) --> INIT_NOP1
 
-    state INIT {
-        INIT_NOP1 --> INIT_NOP1: cnt!=0
-        INIT_NOP1 --> INIT_PRE1: cnt=0
+    subgraph INIT["INIT"]
+        direction TB
+        INIT_NOP1 -->|cnt!=0| INIT_NOP1
+        INIT_NOP1 -->|cnt=0| INIT_PRE1
         INIT_PRE1 --> INIT_NOP2
         INIT_NOP2 --> INIT_REF1
-        INIT_REF1 --> INIT_NOP3: load 7
-        INIT_NOP3 --> INIT_NOP3: cnt!=0
-        INIT_NOP3 --> INIT_REF2: cnt=0
-        INIT_REF2 --> INIT_NOP4: load 7
-        INIT_NOP4 --> INIT_NOP4: cnt!=0
-        INIT_NOP4 --> INIT_LOAD: cnt=0
-        INIT_LOAD --> INIT_NOP5: load 1
-        INIT_NOP5 --> INIT_NOP5: cnt!=0
-        INIT_NOP5 --> IDLE: cnt=0
-    }
+        INIT_REF1 -->|load 7| INIT_NOP3
+        INIT_NOP3 -->|cnt!=0| INIT_NOP3
+        INIT_NOP3 -->|cnt=0| INIT_REF2
+        INIT_REF2 -->|load 7| INIT_NOP4
+        INIT_NOP4 -->|cnt!=0| INIT_NOP4
+        INIT_NOP4 -->|cnt=0| INIT_LOAD
+        INIT_LOAD -->|load 1| INIT_NOP5
+        INIT_NOP5 -->|cnt!=0| INIT_NOP5
+    end
 
-    IDLE --> IDLE: else / NOP
-    IDLE --> REF_PRE: refresh due
-    IDLE --> READ_ACT: rd_enable
-    IDLE --> WRIT_ACT: wr_enable
+    INIT_NOP5 -->|cnt=0| IDLE
+    IDLE((IDLE))
+    IDLE -->|else / NOP| IDLE
+    IDLE -->|refresh due| REF_PRE
+    IDLE -->|rd_enable| READ_ACT
+    IDLE -->|wr_enable| WRIT_ACT
 
-    state REFRESH {
+    subgraph REFRESH["REFRESH"]
+        direction TB
         REF_PRE --> REF_NOP1
         REF_NOP1 --> REF_REF
-        REF_REF --> REF_NOP2: load 7
-        REF_NOP2 --> REF_NOP2: cnt!=0
-        REF_NOP2 --> IDLE: cnt=0
-    }
+        REF_REF -->|load 7| REF_NOP2
+        REF_NOP2 -->|cnt!=0| REF_NOP2
+    end
 
-    state READ {
-        READ_ACT --> READ_NOP1: load 1
-        READ_NOP1 --> READ_NOP1: cnt!=0
-        READ_NOP1 --> READ_CAS: cnt=0
-        READ_CAS --> READ_NOP2: load 1
-        READ_NOP2 --> READ_NOP2: cnt!=0
-        READ_NOP2 --> READ_READ: cnt=0
-        READ_READ --> IDLE
-    }
+    REF_NOP2 -->|cnt=0| IDLE
 
-    state WRITE {
-        WRIT_ACT --> WRIT_NOP1: load 1
-        WRIT_NOP1 --> WRIT_NOP1: cnt!=0
-        WRIT_NOP1 --> WRIT_CAS: cnt=0
-        WRIT_CAS --> WRIT_NOP2: load 1
-        WRIT_NOP2 --> WRIT_NOP2: cnt!=0
-        WRIT_NOP2 --> IDLE: cnt=0
-    }
+    subgraph READ["READ  busy=1"]
+        direction TB
+        READ_ACT -->|load 1| READ_NOP1
+        READ_NOP1 -->|cnt!=0| READ_NOP1
+        READ_NOP1 -->|cnt=0| READ_CAS
+        READ_CAS -->|load 1| READ_NOP2
+        READ_NOP2 -->|cnt!=0| READ_NOP2
+        READ_NOP2 -->|cnt=0| READ_READ
+    end
+
+    READ_READ --> IDLE
+
+    subgraph WRITE["WRITE  busy=1"]
+        direction TB
+        WRIT_ACT -->|load 1| WRIT_NOP1
+        WRIT_NOP1 -->|cnt!=0| WRIT_NOP1
+        WRIT_NOP1 -->|cnt=0| WRIT_CAS
+        WRIT_CAS -->|load 1| WRIT_NOP2
+        WRIT_NOP2 -->|cnt!=0| WRIT_NOP2
+    end
+
+    WRIT_NOP2 -->|cnt=0| IDLE
 ```
 
 | State | Command | Stay (clk) | Notes |
