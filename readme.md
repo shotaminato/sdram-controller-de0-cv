@@ -96,6 +96,90 @@ fusesoc sim --testbench double_click_tb dram_controller --vcd
 The Quartus project in `quartus/` can also be opened directly. Top-level ports use
 Terasic DE0-CV names (`CLOCK_50`, `RESET_N`, `KEY`, `SW`, `LEDR`, `DRAM_*`).
 
+## State machine
+
+Verilog (`rtl/sdram_controller.v`) and SystemVerilog (`rtl/sdram_controller.sv`) share this FSM.
+`state_cnt != 0` holds the current state (and the current SDRAM command). The command shown in each bubble is what is on the bus while that state is active. `busy` is `state[STATE_WIDTH-1]` (high in READ_* and WRIT_* only).
+
+IDLE priority: refresh, then `rd_enable`, then `wr_enable`.
+
+```mermaid
+stateDiagram-v2
+    [*] --> INIT_NOP1: reset / NOP, cnt=15
+
+    state INIT {
+        INIT_NOP1 --> INIT_NOP1: cnt!=0
+        INIT_NOP1 --> INIT_PRE1: cnt=0
+        INIT_PRE1 --> INIT_NOP2
+        INIT_NOP2 --> INIT_REF1
+        INIT_REF1 --> INIT_NOP3: load 7
+        INIT_NOP3 --> INIT_NOP3: cnt!=0
+        INIT_NOP3 --> INIT_REF2: cnt=0
+        INIT_REF2 --> INIT_NOP4: load 7
+        INIT_NOP4 --> INIT_NOP4: cnt!=0
+        INIT_NOP4 --> INIT_LOAD: cnt=0
+        INIT_LOAD --> INIT_NOP5: load 1
+        INIT_NOP5 --> INIT_NOP5: cnt!=0
+        INIT_NOP5 --> IDLE: cnt=0
+    }
+
+    IDLE --> IDLE: else / NOP
+    IDLE --> REF_PRE: refresh due
+    IDLE --> READ_ACT: rd_enable
+    IDLE --> WRIT_ACT: wr_enable
+
+    state REFRESH {
+        REF_PRE --> REF_NOP1
+        REF_NOP1 --> REF_REF
+        REF_REF --> REF_NOP2: load 7
+        REF_NOP2 --> REF_NOP2: cnt!=0
+        REF_NOP2 --> IDLE: cnt=0
+    }
+
+    state READ {
+        READ_ACT --> READ_NOP1: load 1
+        READ_NOP1 --> READ_NOP1: cnt!=0
+        READ_NOP1 --> READ_CAS: cnt=0
+        READ_CAS --> READ_NOP2: load 1
+        READ_NOP2 --> READ_NOP2: cnt!=0
+        READ_NOP2 --> READ_READ: cnt=0
+        READ_READ --> IDLE
+    }
+
+    state WRITE {
+        WRIT_ACT --> WRIT_NOP1: load 1
+        WRIT_NOP1 --> WRIT_NOP1: cnt!=0
+        WRIT_NOP1 --> WRIT_CAS: cnt=0
+        WRIT_CAS --> WRIT_NOP2: load 1
+        WRIT_NOP2 --> WRIT_NOP2: cnt!=0
+        WRIT_NOP2 --> IDLE: cnt=0
+    }
+```
+
+| State | Command | Stay (clk) | Notes |
+| --- | --- | ---: | --- |
+| INIT_NOP1 | NOP | 16 | reset loads `cnt=15` |
+| INIT_PRE1 | PALL | 1 | precharge all |
+| INIT_NOP2 | NOP | 1 | |
+| INIT_REF1 | REF | 1 | |
+| INIT_NOP3 | NOP | 8 | tRFC (`cnt=7`) |
+| INIT_REF2 | REF | 1 | |
+| INIT_NOP4 | NOP | 8 | tRFC (`cnt=7`) |
+| INIT_LOAD | MRS | 1 | CAS 3, BL 1 |
+| INIT_NOP5 | NOP | 2 | tMRD (`cnt=1`) |
+| IDLE | NOP | — | wait for refresh / read / write |
+| REF_PRE | PALL | 1 | |
+| REF_NOP1 | NOP | 1 | |
+| REF_REF | REF | 1 | |
+| REF_NOP2 | NOP | 8 | tRFC (`cnt=7`) |
+| READ_ACT / WRIT_ACT | BACT | 1 | row address |
+| READ_NOP1 / WRIT_NOP1 | NOP | 2 | tRCD (`cnt=1`) |
+| READ_CAS | READ | 1 | col, A10 auto-precharge |
+| WRIT_CAS | WRIT | 1 | col, A10 auto-precharge, DQ |
+| READ_NOP2 | NOP | 2 | CAS latency (`cnt=1`) |
+| READ_READ | NOP | 1 | `rd_ready`, capture DQ |
+| WRIT_NOP2 | NOP | 2 | (`cnt=1`) then IDLE |
+
 ## Timings
 
 # Initialization
