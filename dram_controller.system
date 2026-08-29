@@ -1,14 +1,13 @@
 SAPI=1
 [main]
 name = dram_controller
-description = "Stafford toy dram controller for de0 Nano"
+description = "Stafford toy dram controller for DE0-CV"
 
 backend = quartus
 
 [quartus]
-family = "Cyclone IV E"
-device = EP4CE22F17C6
+family = "Cyclone V"
+device = 5CEBA4F23C7
 top_module = toplevel
-sdc_files = data/de0_nano.sdc
+sdc_files = data/de0_cv.sdc
 tcl_files = data/pinmap.tcl
-            data/options.tcl

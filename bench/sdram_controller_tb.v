@@ -9,7 +9,7 @@ module sdram_controller_tb();
     vlog_tb_utils vlog_tb_utils0();
 
     /* HOST CONTROLLS */
-    reg [23:0]  haddr;
+    reg [24:0]  haddr;
     reg [15:0]  data_input;
     wire [15:0] data_output;
     wire busy; 
@@ -28,7 +28,7 @@ module sdram_controller_tb();
 
     initial 
     begin
-        haddr = 24'd0;
+        haddr = 25'd0;
         data_input = 16'd0;
         rd_enable = 1'b0;
         wr_enable = 1'b0;
@@ -45,18 +45,18 @@ module sdram_controller_tb();
       #3 rst_n = 1'b0;
       #3 rst_n = 1'b1;
       
-      #120 haddr = 24'hfedbed;
+      #120 haddr = 25'h1fedbed;
       data_input = 16'd3333;
       
       #3 wr_enable = 1'b1;
       #6 wr_enable = 1'b0;
-      haddr = 24'd0;
+      haddr = 25'd0;
       data_input = 16'd0;  
       
-      #120 haddr = 24'hbedfed;
+      #120 haddr = 25'h0bedfed;
       #3 rd_enable = 1'b1;
       #6 rd_enable = 1'b0;
-      haddr = 24'd0;
+      haddr = 25'd0;
       
       #8 data_r = 16'hbbbb;
       #2 data_r = 16'hzzzz;
