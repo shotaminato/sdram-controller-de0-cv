@@ -138,7 +138,7 @@ flowchart TB
 
 | State | Command | Stay (clk) | Notes |
 | --- | --- | ---: | --- |
-| INIT_NOP1 | NOP | 16 | reset loads `cnt=15` |
+| INIT_NOP1 | NOP | 100 µs | `CLK_FREQUENCY * 100` clocks (reset loads `cnt` = that − 1) |
 | INIT_PRE1 | PALL | 1 | precharge all |
 | INIT_NOP2 | NOP | 1 | |
 | INIT_REF1 | REF | 1 | |
@@ -163,6 +163,7 @@ flowchart TB
 ## Timings
 
 Initialization:
+ - 100 µs NOP with CKE high (stable clock)
  - Precharge all banks
  - 2 refresh cycles
  - Mode programming

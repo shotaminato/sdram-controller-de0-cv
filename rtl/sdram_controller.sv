@@ -54,6 +54,10 @@ module sdram_controller #(
                                              * REFRESH_TIME
                                             ) / REFRESH_COUNT;
 
+    // 100 µs NOP after reset (IS42S16320F: stable clock and CKE high)
+    localparam int INIT_WAIT_CYCLES = CLK_FREQUENCY * 100;
+    localparam int CNT_WIDTH        = $clog2(INIT_WAIT_CYCLES);
+
     //==========================================================================
     // FSM states  (MSB = 1 means READ/WRITE)
     //==========================================================================
@@ -108,7 +112,7 @@ module sdram_controller #(
     logic [HADDR_WIDTH-1:0]   haddr_r;
     logic [15:0]              wr_data_r;
     logic [15:0]              rd_data_r;
-    logic [3:0]               state_cnt;
+    logic [CNT_WIDTH-1:0]     state_cnt;
     logic [9:0]               refresh_cnt;
     logic [7:0]               command;
     logic [STATE_WIDTH-1:0]   state;
@@ -119,12 +123,12 @@ module sdram_controller #(
     //==========================================================================
     logic [STATE_WIDTH-1:0]   next;
     logic [7:0]               command_nxt;
-    logic [3:0]               state_cnt_nxt;
+    logic [CNT_WIDTH-1:0]     state_cnt_nxt;
     logic [SDRADDR_WIDTH-1:0] addr_r;
     logic [BANK_WIDTH-1:0]    bank_addr_r;
 
     logic [HADDR_WIDTH-1:0]   haddr_n;
-    logic [3:0]               state_cnt_n;
+    logic [CNT_WIDTH-1:0]     state_cnt_n;
     logic [9:0]               refresh_cnt_n;
     logic                     haddr_en;
     logic                     wr_data_en;
@@ -301,8 +305,8 @@ module sdram_controller #(
     // FSM: wait-counter load value
     //==========================================================================
     assign state_cnt_nxt =
-        ((adv_init_ref1 | adv_init_ref2 | adv_ref_ref                              ) ? 4'd7 : '0) |
-        ((adv_init_load | adv_writ_act | adv_writ_cas | adv_read_act | adv_read_cas) ? 4'd1 : '0);
+        ((adv_init_ref1 | adv_init_ref2 | adv_ref_ref                              ) ? CNT_WIDTH'(7) : '0) |
+        ((adv_init_load | adv_writ_act | adv_writ_cas | adv_read_act | adv_read_cas) ? CNT_WIDTH'(1) : '0);
 
     //==========================================================================
     // SDRAM address / bank / DQ
@@ -342,7 +346,7 @@ module sdram_controller #(
     assign haddr_n     = (rd_enable ? rd_addr : '0) | (~rd_enable & wr_enable ? wr_addr : '0);
     assign wr_data_en  = wr_enable;
     assign rd_data_en  = (state == READ_READ);
-    assign state_cnt_n = (cnt_zero ? state_cnt_nxt : '0) | (~cnt_zero ? (state_cnt - 4'd1) : '0);
+    assign state_cnt_n = (cnt_zero ? state_cnt_nxt : '0) | (~cnt_zero ? (state_cnt - CNT_WIDTH'(1)) : '0);
     assign refresh_cnt_n =
         ((state == REF_NOP2) ? 10'd0 : '0) |
         ((state != REF_NOP2) ? (refresh_cnt + 10'd1) : '0);
@@ -352,7 +356,7 @@ module sdram_controller #(
     //==========================================================================
     `DFFR_VAL(state,       next,                 1'b1,      clk, rst_n, INIT_NOP1)
     `DFFR_VAL(command,     command_nxt,          1'b1,      clk, rst_n, CMD_NOP)
-    `DFFR_VAL(state_cnt,   state_cnt_n,          1'b1,      clk, rst_n, 4'hf)
+    `DFFR_VAL(state_cnt,   state_cnt_n,          1'b1,      clk, rst_n, CNT_WIDTH'(INIT_WAIT_CYCLES - 1))
     `DFFR_VAL(refresh_cnt, refresh_cnt_n,        1'b1,      clk, rst_n, 10'b0)
     `DFFR    (busy,        state[STATE_WIDTH-1], 1'b1,      clk, rst_n)
     `DFFR    (rd_ready_r,  (state == READ_READ), 1'b1,      clk, rst_n)
