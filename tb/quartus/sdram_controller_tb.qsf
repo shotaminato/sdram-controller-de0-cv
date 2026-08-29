@@ -1,0 +1,131 @@
+# -------------------------------------------------------------------------- #
+#
+# Quartus Prime project assignments for DE0-CV
+# Device: Cyclone V 5CEBA4F23C7
+#
+# -------------------------------------------------------------------------- #
+
+set_global_assignment -name FAMILY "Cyclone V"
+set_global_assignment -name DEVICE 5CEBA4F23C7
+set_global_assignment -name TOP_LEVEL_ENTITY sdram_controller_tb
+set_global_assignment -name ORIGINAL_QUARTUS_VERSION 23.1STD.0
+set_global_assignment -name LAST_QUARTUS_VERSION "23.1std.0 Lite Edition"
+set_global_assignment -name PROJECT_OUTPUT_DIRECTORY output_files
+set_global_assignment -name MIN_CORE_JUNCTION_TEMP 0
+set_global_assignment -name MAX_CORE_JUNCTION_TEMP 85
+set_global_assignment -name ERROR_CHECK_FREQUENCY_DIVISOR 256
+set_global_assignment -name EDA_SIMULATION_TOOL "Questa Intel FPGA (Verilog)"
+set_global_assignment -name EDA_TIME_SCALE "1 ps" -section_id eda_simulation
+set_global_assignment -name EDA_OUTPUT_DATA_FORMAT "VERILOG HDL" -section_id eda_simulation
+set_global_assignment -name POWER_PRESET_COOLING_SOLUTION "23 MM HEAT SINK WITH 200 LFPM AIRFLOW"
+set_global_assignment -name POWER_BOARD_THERMAL_MODEL "NONE (CONSERVATIVE)"
+
+set_global_assignment -name SYSTEMVERILOG_FILE ../../deps/rtl_primitive/pkg/macro_pkg.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../../deps/rtl_primitive/rtl/dff.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../../deps/rtl_primitive/rtl/fifo.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../../deps/uart/rtl/uart_tx.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../../rtl/sdram_controller.sv
+set_global_assignment -name SYSTEMVERILOG_FILE sdram_controller_tb.sv
+set_global_assignment -name SDC_FILE sdram_controller_tb.sdc
+
+#
+# Clock / Reset / UART  (DE0-CV User Manual; UART TX = GPIO_0[3])
+#
+set_location_assignment PIN_M9 -to i_clk
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to i_clk
+set_location_assignment PIN_P22 -to i_rst_n
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to i_rst_n
+set_location_assignment PIN_C16 -to o_uart_tx
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to o_uart_tx
+
+#
+# SDRAM  (DE0-CV User Manual Table 3-13, 3.3-V LVCMOS)
+#
+set_location_assignment PIN_W8 -to DRAM_ADDR[0]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to DRAM_ADDR[0]
+set_location_assignment PIN_T8 -to DRAM_ADDR[1]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to DRAM_ADDR[1]
+set_location_assignment PIN_U11 -to DRAM_ADDR[2]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to DRAM_ADDR[2]
+set_location_assignment PIN_Y10 -to DRAM_ADDR[3]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to DRAM_ADDR[3]
+set_location_assignment PIN_N6 -to DRAM_ADDR[4]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to DRAM_ADDR[4]
+set_location_assignment PIN_AB10 -to DRAM_ADDR[5]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to DRAM_ADDR[5]
+set_location_assignment PIN_P12 -to DRAM_ADDR[6]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to DRAM_ADDR[6]
+set_location_assignment PIN_P7 -to DRAM_ADDR[7]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to DRAM_ADDR[7]
+set_location_assignment PIN_P8 -to DRAM_ADDR[8]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to DRAM_ADDR[8]
+set_location_assignment PIN_R5 -to DRAM_ADDR[9]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to DRAM_ADDR[9]
+set_location_assignment PIN_U8 -to DRAM_ADDR[10]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to DRAM_ADDR[10]
+set_location_assignment PIN_P6 -to DRAM_ADDR[11]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to DRAM_ADDR[11]
+set_location_assignment PIN_R7 -to DRAM_ADDR[12]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to DRAM_ADDR[12]
+
+set_location_assignment PIN_Y9 -to DRAM_DQ[0]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to DRAM_DQ[0]
+set_location_assignment PIN_T10 -to DRAM_DQ[1]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to DRAM_DQ[1]
+set_location_assignment PIN_R9 -to DRAM_DQ[2]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to DRAM_DQ[2]
+set_location_assignment PIN_Y11 -to DRAM_DQ[3]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to DRAM_DQ[3]
+set_location_assignment PIN_R10 -to DRAM_DQ[4]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to DRAM_DQ[4]
+set_location_assignment PIN_R11 -to DRAM_DQ[5]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to DRAM_DQ[5]
+set_location_assignment PIN_R12 -to DRAM_DQ[6]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to DRAM_DQ[6]
+set_location_assignment PIN_AA12 -to DRAM_DQ[7]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to DRAM_DQ[7]
+set_location_assignment PIN_AA9 -to DRAM_DQ[8]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to DRAM_DQ[8]
+set_location_assignment PIN_AB8 -to DRAM_DQ[9]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to DRAM_DQ[9]
+set_location_assignment PIN_AA8 -to DRAM_DQ[10]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to DRAM_DQ[10]
+set_location_assignment PIN_AA7 -to DRAM_DQ[11]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to DRAM_DQ[11]
+set_location_assignment PIN_V10 -to DRAM_DQ[12]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to DRAM_DQ[12]
+set_location_assignment PIN_V9 -to DRAM_DQ[13]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to DRAM_DQ[13]
+set_location_assignment PIN_U10 -to DRAM_DQ[14]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to DRAM_DQ[14]
+set_location_assignment PIN_T9 -to DRAM_DQ[15]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to DRAM_DQ[15]
+
+set_location_assignment PIN_T7 -to DRAM_BA[0]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to DRAM_BA[0]
+set_location_assignment PIN_AB7 -to DRAM_BA[1]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to DRAM_BA[1]
+
+set_location_assignment PIN_U12 -to DRAM_LDQM
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to DRAM_LDQM
+set_location_assignment PIN_N8 -to DRAM_UDQM
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to DRAM_UDQM
+
+set_location_assignment PIN_AB6 -to DRAM_RAS_N
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to DRAM_RAS_N
+set_location_assignment PIN_V6 -to DRAM_CAS_N
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to DRAM_CAS_N
+set_location_assignment PIN_R6 -to DRAM_CKE
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to DRAM_CKE
+set_location_assignment PIN_AB11 -to DRAM_CLK
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to DRAM_CLK
+set_location_assignment PIN_AB5 -to DRAM_WE_N
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to DRAM_WE_N
+set_location_assignment PIN_U6 -to DRAM_CS_N
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to DRAM_CS_N
+
+set_global_assignment -name PARTITION_NETLIST_TYPE SOURCE -section_id Top
+set_global_assignment -name PARTITION_FITTER_PRESERVATION_LEVEL PLACEMENT_AND_ROUTING -section_id Top
+set_global_assignment -name PARTITION_COLOR 16764057 -section_id Top
+
+set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top

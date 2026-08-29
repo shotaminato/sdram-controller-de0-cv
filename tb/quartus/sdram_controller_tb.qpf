@@ -1,0 +1,12 @@
+# -------------------------------------------------------------------------- #
+#
+# Quartus Prime project for the DE0-CV SDRAM UART testbench
+#
+# -------------------------------------------------------------------------- #
+
+QUARTUS_VERSION = "23.1"
+DATE = "15:00:00  August 29, 2026"
+
+# Revisions
+
+PROJECT_REVISION = "sdram_controller_tb"

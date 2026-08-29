@@ -8,6 +8,7 @@ package:
 
 dependencies:
   rtl_primitive: { git: "https://github.com/shotaminato/rtl_primitive.git", rev: "main" }
+  uart: { git: "https://github.com/shotaminato/uart.git", rev: "main" }
 
 sources:
   - rtl/sdram_controller.sv
@@ -15,6 +16,9 @@ sources:
     files:
       - tb/verilator/sdram_model.sv
       - tb/verilator/sdram_controller_tb.sv
+  - target: quartus
+    files:
+      - tb/quartus/sdram_controller_tb.sv
 
 workspace:
   checkout_dir: deps
