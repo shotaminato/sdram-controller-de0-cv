@@ -1,0 +1,20 @@
+# A more detailed description of the manifest format `Bender.yml` can be found here:
+# https://github.com/pulp-platform/bender#manifest-format-benderyml
+
+package:
+  name: sdram_controller
+  authors:
+    - "ShotaMinato <tyuntune@gmail.com>"
+
+dependencies:
+  rtl_primitive: { git: "https://github.com/shotaminato/rtl_primitive.git", rev: "main" }
+
+sources:
+  - rtl/sdram_controller.sv
+  - target: test
+    files:
+      - tb/sdram_model.sv
+      - tb/sdram_controller_tb.sv
+
+workspace:
+  checkout_dir: deps

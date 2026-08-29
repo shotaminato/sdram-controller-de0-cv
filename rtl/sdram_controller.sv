@@ -2,10 +2,8 @@
  * SystemVerilog SDRAM controller for ISSI IS42S16320F on DE0-CV
  *  32M x 16 (64 megabytes), CAS 3
  *
- * Combinational logic is assign-only. Sequential logic uses DFF macros.
+ * Combinational logic is assign-only. Sequential logic uses DFFR macros.
  */
-
-`include "dff.svh"
 
 module sdram_controller #(
     parameter int ROW_WIDTH     = 13,
@@ -224,42 +222,57 @@ module sdram_controller #(
     assign adv_read_cas    = advance & (state == READ_CAS);
     assign adv_read_nop2   = advance & (state == READ_NOP2);
 
-    assign adv_to_idle = advance & ~(
-        adv_init_nop1   | adv_init_pre1   | adv_init_nop2 | adv_init_ref1 |
-        adv_init_nop3   | adv_init_ref2   | adv_init_nop4   | adv_init_load |
-        adv_ref_pre     | adv_ref_nop1    | adv_ref_ref     |
-        adv_writ_act    | adv_writ_nop1   | adv_writ_cas    |
-        adv_read_act    | adv_read_nop1   | adv_read_cas    | adv_read_nop2
-    );
+    assign adv_to_idle =
+        advance &
+        ~(
+            adv_init_nop1   |
+            adv_init_pre1   |
+            adv_init_nop2   |
+            adv_init_ref1   |
+            adv_init_nop3   |
+            adv_init_ref2   |
+            adv_init_nop4   |
+            adv_init_load   |
+            adv_ref_pre     |
+            adv_ref_nop1    |
+            adv_ref_ref     |
+            adv_writ_act    |
+            adv_writ_nop1   |
+            adv_writ_cas    |
+            adv_read_act    |
+            adv_read_nop1   |
+            adv_read_cas    |
+            adv_read_nop2
+        );
 
     //==========================================================================
     // FSM: next state
     //==========================================================================
     assign next =
-          (need_ref        ? REF_PRE    : '0)
-        | (idle_rd         ? READ_ACT   : '0)
-        | (idle_wr         ? WRIT_ACT   : '0)
-        | (idle_hold       ? IDLE       : '0)
-        | (hold            ? state      : '0)
-        | (adv_init_nop1   ? INIT_PRE1  : '0)
-        | (adv_init_pre1   ? INIT_NOP2  : '0)
-        | (adv_init_nop2   ? INIT_REF1  : '0)
-        | (adv_init_ref1   ? INIT_NOP3  : '0)
-        | (adv_init_nop3   ? INIT_REF2  : '0)
-        | (adv_init_ref2   ? INIT_NOP4  : '0)
-        | (adv_init_nop4   ? INIT_LOAD  : '0)
-        | (adv_init_load   ? INIT_NOP5  : '0)
-        | (adv_ref_pre     ? REF_NOP1   : '0)
-        | (adv_ref_nop1    ? REF_REF    : '0)
-        | (adv_ref_ref     ? REF_NOP2   : '0)
-        | (adv_writ_act    ? WRIT_NOP1  : '0)
-        | (adv_writ_nop1   ? WRIT_CAS   : '0)
-        | (adv_writ_cas    ? WRIT_NOP2  : '0)
-        | (adv_read_act    ? READ_NOP1  : '0)
-        | (adv_read_nop1   ? READ_CAS   : '0)
-        | (adv_read_cas    ? READ_NOP2  : '0)
-        | (adv_read_nop2   ? READ_READ  : '0)
-        | (adv_to_idle     ? IDLE       : '0);
+        (need_ref        ? REF_PRE    : '0) |
+        (idle_rd         ? READ_ACT   : '0) |
+        (idle_wr         ? WRIT_ACT   : '0) |
+        (idle_hold       ? IDLE       : '0) |
+        (hold            ? state      : '0) |
+        (adv_init_nop1   ? INIT_PRE1  : '0) |
+        (adv_init_pre1   ? INIT_NOP2  : '0) |
+        (adv_init_nop2   ? INIT_REF1  : '0) |
+        (adv_init_ref1   ? INIT_NOP3  : '0) |
+        (adv_init_nop3   ? INIT_REF2  : '0) |
+        (adv_init_ref2   ? INIT_NOP4  : '0) |
+        (adv_init_nop4   ? INIT_LOAD  : '0) |
+        (adv_init_load   ? INIT_NOP5  : '0) |
+        (adv_ref_pre     ? REF_NOP1   : '0) |
+        (adv_ref_nop1    ? REF_REF    : '0) |
+        (adv_ref_ref     ? REF_NOP2   : '0) |
+        (adv_writ_act    ? WRIT_NOP1  : '0) |
+        (adv_writ_nop1   ? WRIT_CAS   : '0) |
+        (adv_writ_cas    ? WRIT_NOP2  : '0) |
+        (adv_read_act    ? READ_NOP1  : '0) |
+        (adv_read_nop1   ? READ_CAS   : '0) |
+        (adv_read_cas    ? READ_NOP2  : '0) |
+        (adv_read_nop2   ? READ_READ  : '0) |
+        (adv_to_idle     ? IDLE       : '0) ;
 
     //==========================================================================
     // FSM: next command
@@ -270,27 +283,26 @@ module sdram_controller #(
     );
 
     assign command_nxt =
-          (need_ref        ? CMD_PALL : '0)
-        | (idle_rd         ? CMD_BACT : '0)
-        | (idle_wr         ? CMD_BACT : '0)
-        | (idle_hold       ? CMD_NOP  : '0)
-        | (hold            ? command  : '0)
-        | (adv_init_nop1   ? CMD_PALL : '0)
-        | (adv_init_nop2   ? CMD_REF  : '0)
-        | (adv_init_nop3   ? CMD_REF  : '0)
-        | (adv_init_nop4   ? CMD_MRS  : '0)
-        | (adv_ref_nop1    ? CMD_REF  : '0)
-        | (adv_writ_nop1   ? CMD_WRIT : '0)
-        | (adv_read_nop1   ? CMD_READ : '0)
-        | (adv_cmd_nop     ? CMD_NOP  : '0);
+        (need_ref        ? CMD_PALL : '0) |
+        (idle_rd         ? CMD_BACT : '0) |
+        (idle_wr         ? CMD_BACT : '0) |
+        (idle_hold       ? CMD_NOP  : '0) |
+        (hold            ? command  : '0) |
+        (adv_init_nop1   ? CMD_PALL : '0) |
+        (adv_init_nop2   ? CMD_REF  : '0) |
+        (adv_init_nop3   ? CMD_REF  : '0) |
+        (adv_init_nop4   ? CMD_MRS  : '0) |
+        (adv_ref_nop1    ? CMD_REF  : '0) |
+        (adv_writ_nop1   ? CMD_WRIT : '0) |
+        (adv_read_nop1   ? CMD_READ : '0) |
+        (adv_cmd_nop     ? CMD_NOP  : '0) ;
 
     //==========================================================================
     // FSM: wait-counter load value
     //==========================================================================
     assign state_cnt_nxt =
-          ((adv_init_ref1 | adv_init_ref2 | adv_ref_ref) ? 4'd7 : '0)
-        | ((adv_init_load | adv_writ_act | adv_writ_cas
-            | adv_read_act | adv_read_cas)               ? 4'd1 : '0);
+        ((adv_init_ref1 | adv_init_ref2 | adv_ref_ref                              ) ? 4'd7 : '0) |
+        ((adv_init_load | adv_writ_act | adv_writ_cas | adv_read_act | adv_read_cas) ? 4'd1 : '0);
 
     //==========================================================================
     // SDRAM address / bank / DQ
@@ -299,29 +311,27 @@ module sdram_controller #(
     assign is_rw_cas    = (state == READ_CAS) | (state == WRIT_CAS);
     assign is_init_load = (state == INIT_LOAD);
 
-    assign bank_addr_r = ((is_rw_act | is_rw_cas)
-                          ? haddr_r[HADDR_WIDTH-1:HADDR_WIDTH-BANK_WIDTH]
-                          : '0);
+    assign bank_addr_r = ((is_rw_act | is_rw_cas) ? haddr_r[HADDR_WIDTH-1:HADDR_WIDTH-BANK_WIDTH] : '0);
 
     assign addr_act = haddr_r[HADDR_WIDTH-(BANK_WIDTH+1):HADDR_WIDTH-(BANK_WIDTH+ROW_WIDTH)];
     assign addr_cas = {{(SDRADDR_WIDTH-11){1'b0}}, 1'b1, haddr_r[COL_WIDTH-1:0]};
     assign addr_mrs = {{(SDRADDR_WIDTH-10){1'b0}}, 10'b1000110000};
 
     assign addr_r =
-          (is_rw_act    ? addr_act : '0)
-        | (is_rw_cas    ? addr_cas : '0)
-        | (is_init_load ? addr_mrs : '0);
+        (is_rw_act    ? addr_act : '0) |
+        (is_rw_cas    ? addr_cas : '0) |
+        (is_init_load ? addr_mrs : '0);
 
     assign use_addr_r = state[STATE_WIDTH-1] | is_init_load;
     assign addr_cmd   = {{(SDRADDR_WIDTH-11){1'b0}}, command[0], 10'd0};
 
     assign addr =
-          (use_addr_r  ? addr_r   : '0)
-        | (~use_addr_r ? addr_cmd : '0);
+        (use_addr_r  ? addr_r   : '0) |
+        (~use_addr_r ? addr_cmd : '0);
 
     assign bank_addr =
-          (state[STATE_WIDTH-1]  ? bank_addr_r     : '0)
-        | (~state[STATE_WIDTH-1] ? command[2:1]    : '0);
+        (state[STATE_WIDTH-1]  ? bank_addr_r     : '0) |
+        (~state[STATE_WIDTH-1] ? command[2:1]    : '0);
 
     assign data = (state == WRIT_CAS) ? wr_data_r : 16'bz;
 
@@ -334,20 +344,20 @@ module sdram_controller #(
     assign rd_data_en  = (state == READ_READ);
     assign state_cnt_n = (cnt_zero ? state_cnt_nxt : '0) | (~cnt_zero ? (state_cnt - 4'd1) : '0);
     assign refresh_cnt_n =
-          ((state == REF_NOP2) ? 10'd0 : '0)
-        | ((state != REF_NOP2) ? (refresh_cnt + 10'd1) : '0);
+        ((state == REF_NOP2) ? 10'd0 : '0) |
+        ((state != REF_NOP2) ? (refresh_cnt + 10'd1) : '0);
 
     //==========================================================================
-    // Sequential elements (DFF / DFFE macros)
+    // Sequential elements (DFFR / DFFR_VAL macros)
     //==========================================================================
-    `DFF(u_state,       STATE_WIDTH, state,       next,                   clk, rst_n, INIT_NOP1)
-    `DFF(u_command,     8,           command,     command_nxt,            clk, rst_n, CMD_NOP)
-    `DFF(u_state_cnt,   4,           state_cnt,   state_cnt_n,            clk, rst_n, 4'hf)
-    `DFF(u_refresh_cnt, 10,          refresh_cnt, refresh_cnt_n,          clk, rst_n, 10'b0)
-    `DFF(u_busy,        1,           busy,        state[STATE_WIDTH-1],   clk, rst_n, 1'b0)
-    `DFF(u_rd_ready,    1,           rd_ready_r,  (state == READ_READ),   clk, rst_n, 1'b0)
-    `DFFE(u_haddr,      HADDR_WIDTH, haddr_r,     haddr_n,    haddr_en,   clk, rst_n, {HADDR_WIDTH{1'b0}})
-    `DFFE(u_wr_data,    16,          wr_data_r,   wr_data,    wr_data_en, clk, rst_n, 16'b0)
-    `DFFE(u_rd_data,    16,          rd_data_r,   data,       rd_data_en, clk, rst_n, 16'b0)
+    `DFFR_VAL(state,       next,                 1'b1,      clk, rst_n, INIT_NOP1)
+    `DFFR_VAL(command,     command_nxt,          1'b1,      clk, rst_n, CMD_NOP)
+    `DFFR_VAL(state_cnt,   state_cnt_n,          1'b1,      clk, rst_n, 4'hf)
+    `DFFR_VAL(refresh_cnt, refresh_cnt_n,        1'b1,      clk, rst_n, 10'b0)
+    `DFFR    (busy,        state[STATE_WIDTH-1], 1'b1,      clk, rst_n)
+    `DFFR    (rd_ready_r,  (state == READ_READ), 1'b1,      clk, rst_n)
+    `DFFR    (haddr_r,     haddr_n,              haddr_en,  clk, rst_n)
+    `DFFR    (wr_data_r,   wr_data,              wr_data_en, clk, rst_n)
+    `DFFR    (rd_data_r,   data,                 rd_data_en, clk, rst_n)
 
 endmodule

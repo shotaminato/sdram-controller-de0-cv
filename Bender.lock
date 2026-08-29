@@ -1,0 +1,7 @@
+packages:
+  rtl_primitive:
+    revision: 8be2d730dd83b5fb4036ed98ac663660683d5d29
+    version: null
+    source:
+      Git: https://github.com/shotaminato/rtl_primitive.git
+    dependencies: []

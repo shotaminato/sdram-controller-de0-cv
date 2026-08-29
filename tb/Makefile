@@ -1,30 +1,22 @@
-# Compare Verilog vs SystemVerilog sdram_controller with the same testbench:
-#   make cmp
-ROOT ?= ..
-TB   := .
-RTL  := $(ROOT)/rtl
-OUT  := $(TB)/out
+# Simulate sdram_controller
+#   make sim
+ROOT   ?= ..
+TB     := .
+OUT    := $(TB)/out
+BENDER ?= bender
 
-.PHONY: all v sv cmp clean
+SV_SRCS := $(shell cd $(ROOT) && $(BENDER) script flist -t test)
 
-all: cmp
+.PHONY: all sim clean
+
+all: sim
 
 $(OUT):
 	mkdir -p $(OUT)
 
-v: $(OUT)
-	iverilog -g2012 -o $(OUT)/sim_v.vvp \
-	  $(RTL)/sdram_controller.v $(TB)/sdram_model.v $(TB)/sdram_controller_tb.v
-	vvp $(OUT)/sim_v.vvp +LOG=$(OUT)/v.log
-
-sv: $(OUT)
-	iverilog -g2012 -I $(RTL) -o $(OUT)/sim_sv.vvp \
-	  $(RTL)/dff.sv $(RTL)/sdram_controller.sv \
-	  $(TB)/sdram_model.v $(TB)/sdram_controller_tb.v
-	vvp $(OUT)/sim_sv.vvp +LOG=$(OUT)/sv.log
-
-cmp:
-	./run_cmp.sh
+sim: $(OUT)
+	iverilog -g2012 -o $(OUT)/sim.vvp $(SV_SRCS)
+	vvp $(OUT)/sim.vvp
 
 clean:
 	rm -rf $(OUT)
