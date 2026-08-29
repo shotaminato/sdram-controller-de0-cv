@@ -13,7 +13,8 @@ output_files/
 junk/
 .qsys_edit/
 
-tb/out/
+obj_dir
+tb/verilator/out/
 
 .bender
 deps

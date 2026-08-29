@@ -34,7 +34,9 @@ This checks out `rtl_primitive` (`DFFR` / `DFFR_VAL` macros) into `deps/`. Combi
 
 ```
 # requires Verilator (and a C++ compiler) plus bender checkout
-make -C tb sim
+make -C tb/verilator sim
+```
+
 ```
 
 ```

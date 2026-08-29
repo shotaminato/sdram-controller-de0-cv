@@ -8,7 +8,7 @@
 module sdram_controller_tb;
 
     localparam int  HADDR_WIDTH = 25;
-    localparam int  TIMEOUT     = 20000;
+    localparam int  TIMEOUT     = 30000;
     localparam time CLK_PERIOD  = 10ns;
 
     logic                    clk;
@@ -174,7 +174,8 @@ module sdram_controller_tb;
         repeat (8) @(negedge clk);
         rst_n = 1'b1;
 
-        // INIT: reset wait 15, precharge, two refreshes, MRS
+        // INIT: 100 µs NOP, precharge, two refreshes, MRS
+        // wr_enable is held until busy, so this can overlap the long NOP
         repeat (80) @(posedge clk);
 
         do_write(25'h000_0001, 16'h1111);

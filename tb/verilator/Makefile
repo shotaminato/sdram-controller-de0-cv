@@ -1,7 +1,7 @@
 # Simulate sdram_controller with Verilator
 #   make sim
 #   need Ubuntu 24.04 or later
-ROOT      ?= ..
+ROOT      ?= ../..
 TB        := .
 OUT       := $(TB)/out
 TOP       := sdram_controller_tb

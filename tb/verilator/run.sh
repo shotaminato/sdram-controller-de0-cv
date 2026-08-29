@@ -2,8 +2,8 @@
 # Self-checking simulation of the SystemVerilog sdram_controller (Verilator).
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-OUT="$ROOT/tb/out"
+ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+OUT="$ROOT/tb/verilator/out"
 PRIM_ROOT="${PRIM_ROOT:-$ROOT/deps/rtl_primitive}"
 mkdir -p "$OUT"
 
@@ -33,7 +33,7 @@ fi
   -o sim \
   -I"$PRIM_ROOT/pkg" \
   -I"$ROOT/rtl" \
-  -I"$ROOT/tb" \
-  "$ROOT/tb/verilator_top.sv"
+  -I"$ROOT/tb/verilator" \
+  "$ROOT/tb/verilator/verilator_top.sv"
 
 "$OUT/obj_dir/sim" "$@"

@@ -13,8 +13,8 @@ sources:
   - rtl/sdram_controller.sv
   - target: test
     files:
-      - tb/sdram_model.sv
-      - tb/sdram_controller_tb.sv
+      - tb/verilator/sdram_model.sv
+      - tb/verilator/sdram_controller_tb.sv
 
 workspace:
   checkout_dir: deps
