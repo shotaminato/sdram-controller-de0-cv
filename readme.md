@@ -28,13 +28,29 @@ The controller is `rtl/sdram_controller.sv`. Dependencies are managed by [Bender
 bender update
 ```
 
-This checks out `rtl_primitive` (`DFFR` / `DFFR_VAL` macros) into `deps/`. Combinational logic is `assign` only. Override `CLK_FREQUENCY` if the clock is not 100 MHz.
+This checks out `rtl_primitive` (`DFFR` / `DFFR_VAL` macros) and `uart` into `deps/`. Combinational logic is `assign` only. Override `CLK_FREQUENCY` if the clock is not 100 MHz.
 
 ## Simulation
 
 ```
 # requires Verilator (and a C++ compiler) plus bender checkout
-make -C tb sim
+make -C tb/verilator sim
+```
+
+## FPGA test (DE0-CV)
+
+`tb/quartus/sdram_controller_tb.sv` is a synthesizable test. After SDRAM init it writes an expected word, reads the same address, and prints `addr expected got` as hex over UART (115200 8N1) on GPIO_0[3] (`PIN_C16`). It then idles for 128 ms (two 64 ms refresh windows) with no host access, and reads the same locations back. The board clock is 50 MHz (`CLK_FREQUENCY=50`). Open `tb/quartus/sdram_controller_tb.qpf` after `bender update`, compile, and program. Reset starts the sequence. A matching run looks like:
+
+```
+00000001 1111 1111
+00000002 2222 2222
+00000400 3333 3333
+00801407 ABCD ABCD
+00000001 F00F F00F
+00000001 F00F F00F
+00000002 2222 2222
+00000400 3333 3333
+00801407 ABCD ABCD
 ```
 
 ```
@@ -136,7 +152,7 @@ flowchart TB
 
 | State | Command | Stay (clk) | Notes |
 | --- | --- | ---: | --- |
-| INIT_NOP1 | NOP | 16 | reset loads `cnt=15` |
+| INIT_NOP1 | NOP | 100 µs | `CLK_FREQUENCY * 100` clocks (reset loads `cnt` = that − 1) |
 | INIT_PRE1 | PALL | 1 | precharge all |
 | INIT_NOP2 | NOP | 1 | |
 | INIT_REF1 | REF | 1 | |
@@ -161,6 +177,7 @@ flowchart TB
 ## Timings
 
 Initialization:
+ - 100 µs NOP with CKE high (stable clock)
  - Precharge all banks
  - 2 refresh cycles
  - Mode programming
