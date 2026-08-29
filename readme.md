@@ -33,7 +33,7 @@ This checks out `rtl_primitive` (`DFFR` / `DFFR_VAL` macros) into `deps/`. Combi
 ## Simulation
 
 ```
-# requires iverilog / vvp and bender
+# requires Verilator (and a C++ compiler) plus bender checkout
 make -C tb sim
 ```
 
