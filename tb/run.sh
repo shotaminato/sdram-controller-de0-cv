@@ -1,20 +1,39 @@
 #!/usr/bin/env bash
-# Self-checking simulation of the SystemVerilog sdram_controller.
+# Self-checking simulation of the SystemVerilog sdram_controller (Verilator).
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 OUT="$ROOT/tb/out"
+PRIM_ROOT="${PRIM_ROOT:-$ROOT/deps/rtl_primitive}"
 mkdir -p "$OUT"
 
-if ! command -v iverilog >/dev/null || ! command -v vvp >/dev/null; then
-  echo "FAIL: iverilog/vvp not found"
-  exit 1
-fi
-if ! command -v bender >/dev/null; then
-  echo "FAIL: bender not found"
+if [[ ! -d "$PRIM_ROOT/pkg" ]]; then
+  echo "FAIL: missing $PRIM_ROOT; run bender update"
   exit 1
 fi
 
-mapfile -t SV_SRCS < <(cd "$ROOT" && bender script flist -t test)
-iverilog -g2012 -o "$OUT/sim.vvp" "${SV_SRCS[@]}"
-vvp "$OUT/sim.vvp"
+if verilator --version >/dev/null 2>&1; then
+  VERILATOR=(verilator)
+elif command -v verilator_bin >/dev/null; then
+  VERILATOR=(verilator_bin)
+  if [[ -z "${VERILATOR_ROOT:-}" ]]; then
+    _vb="$(command -v verilator_bin)"
+    export VERILATOR_ROOT="$(cd "$(dirname "$_vb")/../share/verilator" && pwd)"
+  fi
+else
+  echo "FAIL: verilator not found"
+  exit 1
+fi
+
+"${VERILATOR[@]}" --binary --timing -j 0 \
+  --top-module sdram_controller_tb \
+  -Wno-WIDTHEXPAND \
+  -CFLAGS -O2 \
+  -Mdir "$OUT/obj_dir" \
+  -o sim \
+  -I"$PRIM_ROOT/pkg" \
+  -I"$ROOT/rtl" \
+  -I"$ROOT/tb" \
+  "$ROOT/tb/verilator_top.sv"
+
+"$OUT/obj_dir/sim" "$@"

@@ -78,14 +78,14 @@ module sdram_controller_tb;
         input logic [15:0]            d
     );
         @(posedge clk);
-        wr_addr   <= a;
-        wr_data   <= d;
-        rd_addr   <= '0;
-        wr_enable <= 1'b1;
-        rd_enable <= 1'b0;
+        wr_addr   = a;
+        wr_data   = d;
+        rd_addr   = '0;
+        wr_enable = 1'b1;
+        rd_enable = 1'b0;
         @(posedge clk);
         while (!busy) @(posedge clk);
-        wr_enable <= 1'b0;
+        wr_enable = 1'b0;
         while (busy) @(posedge clk);
     endtask
 
@@ -94,14 +94,14 @@ module sdram_controller_tb;
         output logic [15:0]            d
     );
         @(posedge clk);
-        rd_addr   <= a;
-        wr_addr   <= '0;
-        wr_data   <= 16'd0;
-        rd_enable <= 1'b1;
-        wr_enable <= 1'b0;
+        rd_addr   = a;
+        wr_addr   = '0;
+        wr_data   = 16'd0;
+        rd_enable = 1'b1;
+        wr_enable = 1'b0;
         @(posedge clk);
         while (!busy) @(posedge clk);
-        rd_enable <= 1'b0;
+        rd_enable = 1'b0;
         while (!rd_ready) @(posedge clk);
         d = rd_data;
         while (busy) @(posedge clk);
@@ -133,8 +133,8 @@ module sdram_controller_tb;
             cycle = cycle + 1;
             if (cycle > TIMEOUT) begin
                 $display("FAIL: timeout at cycle %0d", cycle);
-                if (log) $fclose(log);
-                $finish;
+                if (log != 0) $fclose(log);
+                $fatal;
             end
         end
     end
@@ -145,14 +145,14 @@ module sdram_controller_tb;
             log = $fopen(log_path, "w");
             if (log == 0) begin
                 $display("FAIL: cannot open log %0s", log_path);
-                $finish;
+                $fatal;
             end
             $fwrite(log, "# cycle rst_n wr_en rd_en busy rd_rdy wr_data rd_data addr ba cke cs ras cas we ldqm udqm dq\n");
         end
         forever begin
             @(posedge clk);
             #1ns;
-            if (log && rst_n)
+            if ((log != 0) && rst_n)
                 $fwrite(log,
                     "%0d %b %b %b %b %b %04h %04h %04h %b %b %b %b %b %b %b %b %04h\n",
                     cycle, rst_n, wr_enable, rd_enable, busy, rd_ready,
@@ -197,14 +197,14 @@ module sdram_controller_tb;
         do_read(25'h000_0002, got);
         expect_eq(25'h000_0002, 16'h2222, got);
 
-        if (errors) begin
+        if (errors != 0) begin
             $display("FAIL: %0d mismatches", errors);
-            if (log) $fclose(log);
-            $finish;
+            if (log != 0) $fclose(log);
+            $fatal;
         end
 
         $display("PASS: sdram_controller_tb");
-        if (log) $fclose(log);
+        if (log != 0) $fclose(log);
         $finish;
     end
 
